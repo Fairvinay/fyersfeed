@@ -205,3 +205,22 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+
+
+#Local Vertual env
+venv
+
+#local screens
+screens
+
+#Local other specific files 
+FlaskServer-Ctrl+C-issues.txt
+fyerAuthAccessGenerateWebSocketStreams.py
+fyerModelLogin.py
+Fyers-API-Model-installed.png
+fyersDataSocket.log
+fyersModelAuthAccessToken.py
+fyers_auto_auth.py
+verify_modules_cmd.txt
+fyers_auto_auth_start_websocket.py
