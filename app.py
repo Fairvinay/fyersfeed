@@ -354,31 +354,65 @@ def generate_access_token(auth_code):
 # 4. WebSocket Connection Function
 def start_websocket(access_token):
     print("📡 Starting WebSocket with access_token...")
-    socket = data_ws.FyersDataSocket(
-        access_token=access_token,
-        log_path=os.getcwd(),
-        litemode=True,                  # Lite mode disabled. Set to True if you want a lite response.
-        write_to_file=False,              # Save response in a log file instead of printing it.
-        reconnect=True,      
+     def onmessage(message):
+   	 """
+   	 Callback function to handle incoming messages from the FyersDataSocket WebSocket.
+
+  	  Parameters:
+    	    message (dict): The received message from the WebSocket.
+
+  	 """
+   	   print("Response:", message)
+
+     def onerror(message):
+   	 """
+   	  Callback function to handle WebSocket errors.
+
+  	  Parameters:
+    	    message (dict): The error message received from the WebSocket.
+     """
+       print("Error:", message)
+
+
+     def onclose(message):
+     """
+       Callback function to handle WebSocket connection close events.
+     """
+       print("Connection closed:", message)
+
+
+     def onopen():
+     """
+      C allback function to subscribe to data type and symbols upon WebSocket connection.
+
+     """
+     # Specify the data type and symbols you want to subscribe to
+       data_type = "SymbolUpdate"
+
+     # Subscribe to the specified symbols and data type
+       symbols = ['NSE:SBIN-EQ', 'NSE:ADANIENT-EQ']
+       fyers.subscribe(symbols=symbols, data_type=data_type)
+
+     # Keep the socket running to receive real-time data
+       fyers.keep_running()
+
+    # Replace the sample access token with your actual access token obtained from Fyers 
+    access_token = access_token
+    # Create a FyersDataSocket instance with the provided parameters
+    fyers = data_ws.FyersDataSocket(
+     access_token=access_token,       # Access token in the format "appid:accesstoken"
+     log_path="",                     # Path to save logs. Leave empty to auto-create logs in the current directory.
+     litemode=True,                  # Lite mode disabled. Set to True if you want a lite response.
+     write_to_file=False,              # Save response in a log file instead of printing it.
+     reconnect=True,                  # Enable auto-reconnection to WebSocket on disconnection.
+     on_connect=onopen,               # Callback function to subscribe to data upon connection.
+     on_close=onclose,                # Callback function to handle WebSocket connection close events.
+     on_error=onerror,                # Callback function to handle WebSocket errors.
+     on_message=onmessage             # Callback function to handle incoming messages from the WebSocket.
     )
 
-    def on_message(msg):
-        print("📥 Data:", json.dumps(msg))
-        message_queue.put(f"data: {message}\n\n")
-
-    def on_error(msg):
-        print("❗Error:", msg)
-
-    def on_close(msg):
-        print("🔌 Closed:", msg)
-
-    socket.on_connect = lambda: socket.subscribe(symbols=["NSE:RELIANCE-EQ"], data_type="symbolData")
-    socket.on_message = on_message
-    socket.on_error = on_error
-    socket.on_close = on_close
-
-    socket.connect()
-
+    # Establish a connection to the Fyers WebSocket
+    fyers.connect()
 
 # === WebSocket Setup ===
 def custom_message(msg):
