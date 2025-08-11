@@ -158,7 +158,7 @@ def redirect_handler_start():
                            console.log("Server variable:", accessToken);
                            /*  document.getElementById('startSSE').addEventListener('click', function (event) {
                                 //event.preventDefault(); // stop POST
-                                 const es = new EventSource(`http://localhost:5000/stream?accessToken=${accessToken}`);
+                                 const es = new EventSource(`https://fyersmarketfeed.onrender.com/stream?accessToken=${accessToken}`);
                                 es.onmessage = function(e) {
                                        console.log("SSE:", e.data);
                                     };
@@ -189,7 +189,7 @@ def redirect_handler_start():
 			              console.log("SSE alredy running ");
                                     return;
                                   }
-                                   es = new EventSource(`http://localhost:5000/stream?accessToken=${accessToken}`);
+                                   es = new EventSource(`https://fyersmarketfeed.onrender.com/stream?accessToken=${accessToken}`);
                                    es.onmessage = function(e) {
                                        console.log("SSE:", e.data);
                                         document.getElementById('sse').textContent = e.data;
@@ -423,7 +423,7 @@ def main():
     #flask_thread.start()
 
     #time.sleep(1)
-    #webbrowser.open("http://localhost:5000/")
+    #webbrowser.open("https://fyersmarketfeed.onrender.com/")
 
     # Trigger login and capture auth code
     #auth_code = generate_auth_code()
