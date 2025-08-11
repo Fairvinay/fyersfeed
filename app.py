@@ -232,17 +232,17 @@ def stream():
     # Start background websocket thread
     threading.Thread(target=start_websocket, args=(access_token,)).start()
 
-    # def event_stream():
-    #    while True:
-    #        msg = message_queue.get()
-    #        if msg is None:
-    #            break
-    #        yield msg
-    
-    def event_stream():
+     def event_stream():
         while True:
-            yield  f"data: hello at {time.strftime('%Y-%m-%d %H:%M:%S')}\n\n"
-            time.sleep(1)
+            msg = message_queue.get()
+            if msg is None:
+                break
+            yield msg
+    
+    #def event_stream():
+    #    while True:
+    #        yield  f"data: hello at {time.strftime('%Y-%m-%d %H:%M:%S')}\n\n"
+    #        time.sleep(1)
         
     return Response(event_stream(), mimetype="text/event-stream")
 
