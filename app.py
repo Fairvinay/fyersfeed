@@ -356,7 +356,10 @@ def start_websocket(access_token):
     print("📡 Starting WebSocket with access_token...")
     socket = data_ws.FyersDataSocket(
         access_token=access_token,
-        log_path=os.getcwd()
+        log_path=os.getcwd(),
+        litemode=True,                  # Lite mode disabled. Set to True if you want a lite response.
+        write_to_file=False,              # Save response in a log file instead of printing it.
+        reconnect=True,      
     )
 
     def on_message(msg):
