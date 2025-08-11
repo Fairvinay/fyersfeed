@@ -232,7 +232,7 @@ def stream():
     # Start background websocket thread
     threading.Thread(target=start_websocket, args=(access_token,)).start()
 
-     def event_stream():
+    def event_stream():
         while True:
             msg = message_queue.get()
             if msg is None:
