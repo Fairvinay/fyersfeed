@@ -354,47 +354,47 @@ def generate_access_token(auth_code):
 # 4. WebSocket Connection Function
 def start_websocket(access_token):
     print("📡 Starting WebSocket with access_token...")
-     def onmessage(message):
-   	 """
-   	 Callback function to handle incoming messages from the FyersDataSocket WebSocket.
+         def onmessage(message):
+       	 """
+       	 Callback function to handle incoming messages from the FyersDataSocket WebSocket.
 
-  	  Parameters:
-    	    message (dict): The received message from the WebSocket.
+      	  Parameters:
+        	    message (dict): The received message from the WebSocket.
 
-  	 """
-   	   print("Response:", message)
+      	 """
+       	   print("Response:", message)
 
-     def onerror(message):
-   	 """
-   	  Callback function to handle WebSocket errors.
+         def onerror(message):
+       	 """
+       	  Callback function to handle WebSocket errors.
 
-  	  Parameters:
-    	    message (dict): The error message received from the WebSocket.
-     """
-       print("Error:", message)
-
-
-     def onclose(message):
-     """
-       Callback function to handle WebSocket connection close events.
-     """
-       print("Connection closed:", message)
+      	  Parameters:
+        	    message (dict): The error message received from the WebSocket.
+         """
+           print("Error:", message)
 
 
-     def onopen():
-     """
-      C allback function to subscribe to data type and symbols upon WebSocket connection.
+         def onclose(message):
+         """
+           Callback function to handle WebSocket connection close events.
+         """
+           print("Connection closed:", message)
 
-     """
-     # Specify the data type and symbols you want to subscribe to
-       data_type = "SymbolUpdate"
 
-     # Subscribe to the specified symbols and data type
-       symbols = ['NSE:SBIN-EQ', 'NSE:ADANIENT-EQ']
-       fyers.subscribe(symbols=symbols, data_type=data_type)
+         def onopen():
+         """
+          C allback function to subscribe to data type and symbols upon WebSocket connection.
 
-     # Keep the socket running to receive real-time data
-       fyers.keep_running()
+         """
+         # Specify the data type and symbols you want to subscribe to
+           data_type = "SymbolUpdate"
+
+         # Subscribe to the specified symbols and data type
+           symbols = ['NSE:SBIN-EQ', 'NSE:ADANIENT-EQ']
+           fyers.subscribe(symbols=symbols, data_type=data_type)
+
+         # Keep the socket running to receive real-time data
+           fyers.keep_running()
 
     # Replace the sample access token with your actual access token obtained from Fyers 
     access_token = access_token
