@@ -20,8 +20,8 @@ import sys , queue
 
 
 # === Configuration ===
-client_id = "TRLV2A6GPL-100"
-secret_key = "V72MPISUJC"
+client_id = "P67RJAS1M6-100"
+secret_key = "4LXEKKMFUL"
 redirect_uri = "https://fyersbook.netlify.app/.netlify/functions/netlifystockfyersbridge/api/fyersauthcodeverify"
 response_type = "code"
 grant_type = "authorization_code"
