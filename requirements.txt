@@ -14,14 +14,17 @@ click==8.2.1
 colorama==0.4.6
 fastjsonschema==2.21.1
 Flask==3.1.1
+flask-cors==6.0.1
 frozenlist==1.7.0
 fyers_apiv3==3.1.7
+gunicorn==23.0.0
 idna==3.10
 itsdangerous==2.2.0
 Jinja2==3.1.6
 jmespath==0.10.0
 MarkupSafe==3.0.2
 multidict==6.6.3
+packaging==25.0
 propcache==0.3.2
 protobuf==5.29.3
 python-dateutil==2.9.0.post0
