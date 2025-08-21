@@ -63,6 +63,7 @@ ALLOWED_ORIGINS = [
     "https://192.168.1.4:8888",
 ]
 
+headers	 = None
 
 @app.route('/')
 def index():
