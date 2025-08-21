@@ -78,6 +78,7 @@ else:
      "https://onedinaar.com",
      "https://192.168.1.4:8888",
     ]
+    
     print(" allowed origins configured from hard code ")
 
 headers	 = None
