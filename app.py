@@ -420,8 +420,8 @@ def market_feed():
     print("Access Token:", access_token)
     
     if request.method == "OPTIONS":
-		origin = request.headers.get("Origin")
-		if origin in ALLOWED_ORIGINS:
+        origin = request.headers.get("Origin")
+        if origin in ALLOWED_ORIGINS:
             headers = {
                  "Content-Type": "text/event-stream",
                  "Cache-Control": "no-cache",
