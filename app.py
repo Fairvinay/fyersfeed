@@ -72,14 +72,13 @@ ALLOWED_ORIGINS = [origin.strip() for origin in allowed_origins.split(",") if or
 if ALLOWED_ORIGINS:  # checks list is not empty
     print("Allowed origins found:", ALLOWED_ORIGINS)
 else:
-	ALLOWED_ORIGINS = [
-     "https://successrate.netlify.app",
-     "https://fyersbook.netlify.app",
-     "https://onedinaar.com",
-     "https://192.168.1.4:8888",
+    ALLOWED_ORIGINS = [
+        "https://successrate.netlify.app",
+        "https://fyersbook.netlify.app",
+        "https://onedinaar.com",
+        "https://192.168.1.4:8888",
     ]
-    
-    print(" allowed origins configured from hard code ")
+    print("Allowed origins configured from hard code")
 
 headers	 = None
 
