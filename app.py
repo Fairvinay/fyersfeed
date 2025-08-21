@@ -23,7 +23,8 @@ import sys , queue
 # === Configuration ===
 client_id = "P67RJAS1M6-100"
 secret_key = "4LXEKKMFUL"
-redirect_uri = "https://fyersbook.netlify.app/.netlify/functions/netlifystockfyersbridge/api/fyersauthcodeverify"
+#redirect_uri = "https://fyersbook.netlify.app/.netlify/functions/netlifystockfyersbridge/api/fyersauthcodeverify"
+redirect_uri = "https://successrate.netlify.app/.netlify/functions/netlifystockfyersbridge/api/fyersauthcodeverify"
 response_type = "code"
 grant_type = "authorization_code"
 state = "python_state"
@@ -50,8 +51,8 @@ message_queue = queue.Queue()
 
 
 # Allow only your Next.js origin
-CORS(app, supports_credentials=True, resources={r"/stream*": {"origins": "https://fyersbook.netlify.app"}})
-
+#CORS(app, supports_credentials=True, resources={r"/stream*": {"origins": "https://fyersbook.netlify.app"}})
+CORS(app, supports_credentials=True, resources={r"/stream*": {"origins": "https://successrate.netlify.app"}})
 
 @app.route('/')
 def index():
