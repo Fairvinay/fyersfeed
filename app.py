@@ -20,10 +20,10 @@ import sys , queue
 
 
 
-# === Configuration ===
-client_id = os.environ.get("client_id", "P67RJAS1M6-100")
-secret_key = os.environ.get("secret_key", "4LXEKKMFUL")
-redirec_base_url = os.environ.get("redirec_base_url", "https://fyersbook.netlify.app")
+# === Configuration ===P67RJAS1M6-100 4LXEKKMFUL
+client_id = os.environ.get("client_id", "V8BNUWJ4WQ-100")
+secret_key = os.environ.get("secret_key", "KOA61TZLP4")
+redirec_base_url = os.environ.get("redirec_base_url", "https://successrate.netlify.app")
 #redirect_uri = "https://fyersbook.netlify.app/.netlify/functions/netlifystockfyersbridge/api/fyersauthcodeverify"
 redirect_uri = redirec_base_url.rstrip("/") +"/.netlify/functions/netlifystockfyersbridge/api/fyersauthcodeverify"
 response_type = "code"
@@ -69,6 +69,16 @@ CORS(app, supports_credentials=True, resources={r"/stream*": {"origins": cors_ur
 allowed_origins = os.environ.get("ALLOWED_ORIGINS", "")
 ALLOWED_ORIGINS = [origin.strip() for origin in allowed_origins.split(",") if origin.strip()]
 
+if ALLOWED_ORIGINS:  # checks list is not empty
+    print("Allowed origins found:", ALLOWED_ORIGINS)
+else:
+	ALLOWED_ORIGINS = [
+     "https://successrate.netlify.app",
+     "https://fyersbook.netlify.app",
+     "https://onedinaar.com",
+     "https://192.168.1.4:8888",
+    ]
+    print(" allowed origins configured from hard code ")
 
 headers	 = None
 
