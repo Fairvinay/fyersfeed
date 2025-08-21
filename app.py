@@ -25,7 +25,7 @@ client_id = os.environ.get("client_id", "P67RJAS1M6-100")
 secret_key = os.environ.get("secret_key", "4LXEKKMFUL")
 redirec_base_url = os.environ.get("redirec_base_url", "https://fyersbook.netlify.app")
 #redirect_uri = "https://fyersbook.netlify.app/.netlify/functions/netlifystockfyersbridge/api/fyersauthcodeverify"
-redirect_uri = redirect_base_url.rstrip("/") +"/.netlify/functions/netlifystockfyersbridge/api/fyersauthcodeverify"
+redirect_uri = redirec_base_url.rstrip("/") +"/.netlify/functions/netlifystockfyersbridge/api/fyersauthcodeverify"
 response_type = "code"
 grant_type = "authorization_code"
 state = "python_state"
@@ -53,7 +53,7 @@ message_queue = queue.Queue()
 
 # Allow only your Next.js origin
 #CORS(app, supports_credentials=True, resources={r"/stream*": {"origins": "https://fyersbook.netlify.app"}})
-cors_url = redirect_base_url.rstrip("/")
+cors_url = redirec_base_url.rstrip("/")
 CORS(app, supports_credentials=True, resources={r"/stream*": {"origins": cors_url}})
 
 
