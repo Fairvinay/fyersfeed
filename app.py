@@ -53,6 +53,7 @@ message_queue = queue.Queue()
 # Allow only your Next.js origin
 #CORS(app, supports_credentials=True, resources={r"/stream*": {"origins": "https://fyersbook.netlify.app"}})
 CORS(app, supports_credentials=True, resources={r"/stream*": {"origins": "https://successrate.netlify.app"}})
+cors_url = "https://successrate.netlify.app"
 
 @app.route('/')
 def index():
@@ -413,7 +414,7 @@ def market_feed():
         "Content-Type": "text/event-stream",
         "Cache-Control": "no-cache",
         "Connection": "keep-alive",
-        "Access-Control-Allow-Origin": "https://fyersbook.netlify.app",
+        "Access-Control-Allow-Origin": cors_url,
         "Access-Control-Allow-Credentials": "true"
     }
     
