@@ -21,10 +21,11 @@ import sys , queue
 
 
 # === Configuration ===
-client_id = "P67RJAS1M6-100"
-secret_key = "4LXEKKMFUL"
+client_id = os.environ.get("client_id", "P67RJAS1M6-100")
+secret_key = os.environ.get("secret_key", "4LXEKKMFUL")
+redirec_base_url = os.environ.get("redirec_base_url", "https://fyersbook.netlify.app")
 #redirect_uri = "https://fyersbook.netlify.app/.netlify/functions/netlifystockfyersbridge/api/fyersauthcodeverify"
-redirect_uri = "https://successrate.netlify.app/.netlify/functions/netlifystockfyersbridge/api/fyersauthcodeverify"
+redirect_uri = redirect_base_url.rstrip("/") +"/.netlify/functions/netlifystockfyersbridge/api/fyersauthcodeverify"
 response_type = "code"
 grant_type = "authorization_code"
 state = "python_state"
@@ -52,18 +53,30 @@ message_queue = queue.Queue()
 
 # Allow only your Next.js origin
 #CORS(app, supports_credentials=True, resources={r"/stream*": {"origins": "https://fyersbook.netlify.app"}})
-CORS(app, supports_credentials=True, resources={r"/stream*": {"origins": "https://successrate.netlify.app"}})
-cors_url = "https://successrate.netlify.app"
+cors_url = redirect_base_url.rstrip("/")
+CORS(app, supports_credentials=True, resources={r"/stream*": {"origins": cors_url}})
+
 
 # Allowed origins
-ALLOWED_ORIGINS = [
-    "https://successrate.netlify.app",
-    "https://fyersbook.netlify.app",
-    "https://onedinaar.com",
-    "https://192.168.1.4:8888",
-]
+#ALLOWED_ORIGINS = [
+#    "https://successrate.netlify.app",
+#    "https://fyersbook.netlify.app",
+#    "https://onedinaar.com",
+#    "https://192.168.1.4:8888",
+#]
+
+# Read env variable and parse into list
+allowed_origins = os.environ.get("ALLOWED_ORIGINS", "")
+ALLOWED_ORIGINS = [origin.strip() for origin in allowed_origins.split(",") if origin.strip()]
+
 
 headers	 = None
+
+
+@app.route("/healthz")
+def healthz():
+	
+    return {"status": "ok", "client_id": client_id , "redirec_base_url" : redirec_base_url ,  "allowed_origins": ALLOWED_ORIGINS }, 200
 
 @app.route('/')
 def index():

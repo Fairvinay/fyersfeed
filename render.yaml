@@ -1,0 +1,37 @@
+services:
+  - type: web
+    name: fyersmarketfeed
+    env: python
+    region: singapore          # change if you prefer another region
+    plan: free              # or "starter"/"pro" as needed
+    autoDeploy: true
+
+    buildCommand: |
+      pip install --upgrade pip
+      pip install -r requirements.txt
+      # Ensure prod server + websocket support (safe even if already in requirements)
+      pip install gunicorn 
+
+    startCommand: >
+      gunicorn
+      
+      --bind 0.0.0.0:${PORT}
+      app:app
+
+    envVars:
+      - key: client_id
+        value: "V8BNUWJ4WQ-100"
+      - key: secret_key
+        value: "KOA61TZLP4"
+      - key: redirec_base_url
+        value: "https://successrate.netlify.app"
+      - key: ALLOWED_ORIGINS
+        value: https://successrate.netlify.app,https://fyersbook.netlify.app,https://onedinaar.com,https://192.168.1.4:8888
+      # Add your secrets here or via the Render dashboard:
+      # - key: FYERS_CLIENT_ID
+      #   sync: false
+      # - key: FYERS_SECRET
+      #   sync: false
+    healthCheckPath: /healthz
+    # Optional health check (uncomment if you have a route like /healthz)
+    # healthCheckPath: /healthz
