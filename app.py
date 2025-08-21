@@ -55,6 +55,15 @@ message_queue = queue.Queue()
 CORS(app, supports_credentials=True, resources={r"/stream*": {"origins": "https://successrate.netlify.app"}})
 cors_url = "https://successrate.netlify.app"
 
+# Allowed origins
+ALLOWED_ORIGINS = [
+    "https://successrate.netlify.app",
+    "https://fyersbook.netlify.app",
+    "https://onedinaar.com",
+    "https://192.168.1.4:8888",
+]
+
+
 @app.route('/')
 def index():
     return render_template("index.html")
@@ -410,13 +419,16 @@ def market_feed():
     print("Tickers:", tickers)
     print("Access Token:", access_token)
     
-    headers = {
-        "Content-Type": "text/event-stream",
-        "Cache-Control": "no-cache",
-        "Connection": "keep-alive",
-        "Access-Control-Allow-Origin": cors_url,
-        "Access-Control-Allow-Credentials": "true"
-    }
+    if request.method == "OPTIONS":
+		origin = request.headers.get("Origin")
+		if origin in ALLOWED_ORIGINS:
+            headers = {
+                 "Content-Type": "text/event-stream",
+                 "Cache-Control": "no-cache",
+                 "Connection": "keep-alive",
+                 "Access-Control-Allow-Origin": origin,
+                 "Access-Control-Allow-Credentials": "true"
+            }
     
      # Start background websocket thread
     threading.Thread(target=start_websocket_ticker, args=(access_token,tickers)).start()
