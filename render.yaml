@@ -28,6 +28,6 @@ services:
       #   sync: false
       # - key: FYERS_SECRET
       #   sync: false
-    healthCheckPath: /healthz
+    # healthCheckPath: /healthz
     # Optional health check (uncomment if you have a route like /healthz)
     # healthCheckPath: /healthz
