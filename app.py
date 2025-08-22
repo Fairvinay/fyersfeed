@@ -455,6 +455,7 @@ def stream():
 def market_feed():
 	
 	global headers
+	
     # Option 1: If repeated params
     tickers = request.args.getlist("ticker")
 
