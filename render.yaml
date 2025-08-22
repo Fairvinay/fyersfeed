@@ -12,11 +12,7 @@ services:
       # Ensure prod server + websocket support (safe even if already in requirements)
       pip install gunicorn 
 
-    startCommand: >
-      gunicorn
-      
-      --bind 0.0.0.0:${PORT}
-      app:app
+    startCommand: gunicorn --bind 0.0.0.0:$PORT app:app
 
     envVars:
       - key: client_id
