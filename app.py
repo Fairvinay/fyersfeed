@@ -80,7 +80,13 @@ else:
     ]
     print("Allowed origins configured from hard code")
 
-headers	 = None
+headers	 = {
+            "Content-Type": "text/event-stream",
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "Access-Control-Allow-Origin": redirec_base_url.rstrip("/"),
+            "Access-Control-Allow-Credentials": "true"
+           }
 
 
 @app.route("/healthz")
@@ -143,6 +149,7 @@ def add_cors_headers(response):
         response.headers["Vary"] = "Origin"
         response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
         response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
+        response.headers["Access-Control-Allow-Credentials"] = "true"
     return response
 
 
@@ -446,6 +453,8 @@ def stream():
 
 @app.route("/stream")
 def market_feed():
+	
+	global headers
     # Option 1: If repeated params
     tickers = request.args.getlist("ticker")
 
