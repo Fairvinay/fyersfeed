@@ -1,2 +1,2 @@
-# fyers-positions-socket-git
-python fyers position general socket for integration with successrate.netlify.app
+# fyersfeed
+websocket streaming example for market feed , involves flask , polls fyers.netlify.app 

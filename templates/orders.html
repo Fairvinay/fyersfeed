@@ -1,0 +1,353 @@
+  <!DOCTYPE html>
+                    <html>
+                     <head>
+                      <meta charset="UTF-8">
+                       <title>Stream with Fyers</title>
+                        <style>
+                          body {
+                           font-family: sans-serif;
+                           text-align: center;
+                           margin-top: 100px;
+                          }
+                          .ticker-span { 
+                             background-color:#346ccf; color:#eaf1de; border-radius: 6px;font-size: 28px;
+                             border-color: #1f8ef1;
+                             border-style:groove;
+                             margin-bottom: 43px;
+                          }
+                          .ticker-inner {
+                           display: inline-flex;
+                           align-items: center;
+                            gap: 42px;
+                           /*padding: 4px 12px;*/
+                           background: rgba(255, 255, 255, 0.1); /* translucent overlay */
+                           /*border-radius: 4px;
+                           border: 1px solid rgba(234, 241, 222, 0.5);*/
+                          }
+                          .ticker-symbol {
+                            font-weight: bold;
+                            font-size: 0.8em; /* slightly smaller than outer span's 28px */
+                            letter-spacing: 0.2px;
+                          }
+
+                          .ticker-ltp {
+                            font-weight: bold;
+                            font-size: 0.8em;
+                            background-color: rgba(0, 0, 0, 0.15);
+                            padding: 2px 8px;
+                            border-radius: 4px;
+                            /*border: 1px solid rgba(234, 241, 222, 0.5);*/
+                          }
+                          .login-btn {
+                            padding: 12px 24px;
+                            font-size: 18px;
+                            background-color: #1f8ef1;
+                            color: white;
+                            border: none;
+                            border-radius: 6px;
+                            cursor: pointer;
+                            margin-top: 5px;
+                          }
+                          .login-btn:hover {
+                            background-color: #0d6efd;
+                          }
+                        </style>
+                     </head>
+                      <body>
+                       <div id="messages"></div>
+                        <script>
+                          
+                           var accessToken = "{{ secret_value }}";
+                           console.log("Server variable:", accessToken);
+                           /*  document.getElementById('startSSE').addEventListener('click', function (event) {
+                                //event.preventDefault(); // stop POST
+                                 const es = new EventSource(`http://localhost:5000/stream?accessToken=${accessToken}`);
+                                es.onmessage = function(e) {
+                                       console.log("SSE:", e.data);
+                                    };
+                           });
+
+                           function post() { 
+		                    event.preventDefault();
+                            const eventSource = new EventSource(`/stream?accessToken=${accessToken}`);
+                            eventSource.onmessage = function(event) {
+                               const msgDiv = document.getElementById("messages");
+                               msgDiv.innerHTML += "<p>" + event.data + "</p>";
+                            };
+                           }*/
+
+                        </script>
+
+                        <form  method="POST">
+                         <div id="ticker-container" class="flex space-x-4">
+                         	<span id="sse" ><!-- class="ticker-span"-->
+                                  <!--  <span id="positions" class="ticker-span  justify-content:space-between; ">
+                                        <span id="symbol" ></span>
+                                           <span id="ltp" ></span>
+                                        <span id="price" ></span>
+                                    </span> -->
+                               <div style="display:inline-flex; flex-wrap:wrap; align-items:center; justify-content: space-between;
+                                       padding:4px; margin:2px 0; 
+                                        border:1px solid #ddd; border-radius:12px; font-size:12px;font-weight:bold;
+                                        background:#f9f9f9; box-shadow:0 2px 4px rgba(0,0,0,0.05);">
+
+                            <!-- Order ID min-width:200px;-->
+                            <div style="flex:1;  font-weight:bold; color:#333;">
+                                ID: <span  id='oid' style="color:#007bff;">23080400089344</span>
+                            </div>
+
+                            <!-- Exchange Order ID min-width:250px; -->
+                            <div style="flex:1; color:#666;">
+                                Exch Ord ID: <span  id='eoid' style="color:#444;">1100000009596016</span>
+                            </div>
+
+                            <!-- Symbol  min-width:150px;-->
+                            <div style="flex:1; font-weight:bold; color:#222;">
+                                Symbol: <span  id='symbol' style="color:#28a745;">NSE:IDEA-EQ</span>
+                            </div>
+
+                            <!-- Qty min-width:100px;-->
+                            <div style="flex:1;  color:#555;">
+                                Qty: <span  id='qtyf' style="color:#222;">1</span> / Filled: 
+                                <span  id='qtyn' style="color:#28a745;">1</span>
+                            </div>
+
+                            <!-- Price  min-width:120px; -->
+                            <div  id='price' style="flex:1;color:#555;">
+                                Price: <span style="color:#e67e22;">₹7.95</span>
+                            </div>
+
+                            <!-- Side (Buy/Sell)  min-width:100px;-->
+                            <div  id='side' style="flex:1; font-weight:bold; 
+                                        color: red;">
+                                Side: SELL
+                            </div>
+
+                            <!-- Status min-width:150px;-->
+                            <div  id='status' style="flex:1;  font-weight:bold; color:#6c757d;">
+                                Status: Completed
+                            </div>
+
+                            <!-- Product  min-width:150px;-->
+                            <div  id='product' style="flex:1; color:#555;">
+                                Product: <span style="color:#17a2b8;">INTRADAY</span>
+                            </div>
+
+                            <!-- Date min-width:200px;-->
+                            <div  id='odate' style="flex:1;  color:#777;">
+                                Date: 04-Aug-2023 10:12:58
+                            </div>
+
+                            <!-- Description -->
+                            <div id='desc' style="flex:1 100%; margin-top:8px; padding-top:6px; border-top:1px solid #eee; 
+                                        font-size:8px; color:#444;">
+                                VODAFONE IDEA LIMITED
+                            </div>
+                            </div>         
+
+
+                                 </span>
+                          </div>
+                        </form>
+                         <button class="login-btn"  type="button" id="startSSE" >Orders from Fyers</button>
+			             <button class="login-btn"  type="button" id="stopSSE" >STOP</button>
+                          <script>
+                             let es = null; // store reference
+                             let tickParse =null; 
+                                         let symbol = null;
+                                         let ltp = null;
+                            // mappings
+                            const sideMap = {
+                                "-1": "SELL",
+                                "1": "BUY"
+                            };
+
+                            const statusMap = {
+                                90: "Completed",
+                                0: "Pending",
+                                1: "Open",
+                                2: "Rejected"
+                            };
+
+                             let tickBufferQueue  = [];
+                             let actToken =  "{{ secret_value }}";
+                             let prevTickParse = JSON.parse('{"ltp": "2288.2", "symbol": "NSE:ADANIENT-EQ", "type": "sf"}');
+                               console.log(prevTickParse);
+                              const container = document.getElementById("ticker-container");  
+                             function addTicker(symbol, ltp , symbolId, ltpId) {
+                              // Create outer span
+                              const outer = document.createElement('span');
+                              outer.className = 'ticker-span';
+
+                               // Create inner container
+                               const inner = document.createElement('span');
+                                inner.className = 'ticker-inner';
+
+                                // Symbol span
+                                 const symbolSpan = document.createElement('span');
+                                  symbolSpan.className = 'ticker-symbol';
+                                   symbolSpan.id = symbolId;  // ✅ ID for symbol
+                                 symbolSpan.textContent = symbol;
+
+                                // LTP span
+                                 const ltpSpan = document.createElement('span');
+                                 ltpSpan.className = 'ticker-ltp';
+                                   ltpSpan.id = ltpId;  // ✅ ID for LTP
+                                 ltpSpan.textContent = ltp;
+
+                                  // Append children
+                                 inner.appendChild(symbolSpan);
+                                 inner.appendChild(ltpSpan);
+                                  outer.appendChild(inner);
+
+                                 // Append to the target element
+                                document.getElementById('sse').appendChild(outer);
+                              }
+                             // addTicker('NIFTY2581424400CE', 126, 'symbol1', 'ltp1');
+                             // addTicker('BANKNIFTY2501012000PE', 352.5, 'symbol2', 'ltp2');    
+                               function   addOtherIndices(ticker , index  ) {
+                                 const tickerSpan = document.createElement("span");
+                                tickerSpan.className = "ticker-span flex items-center space-x-2 bg-gray-100 p-2 rounded shadow";
+
+                               const inner = document.createElement("span");
+                                inner.className = "ticker-inner flex flex-col items-start";
+
+                                const symbol = document.createElement("span");
+                                 symbol.className = "ticker-symbol font-bold";
+                                 symbol.id = `symbol${index + 2}`;
+                                 symbol.textContent = ticker.symbol;
+
+                                 const ltp = document.createElement("span");
+                                 ltp.className = "ticker-ltp text-green-600";
+                                 ltp.id = `ltp${index + 2}`;
+                                 ltp.textContent = ticker.ltp;
+
+                                 inner.appendChild(symbol);
+                                 inner.appendChild(ltp);
+                                 tickerSpan.appendChild(inner);
+                                 container.appendChild(tickerSpan);
+                               }
+                            function showPositions(data) {
+                               const symbol1 = document.getElementById("symbol1");  
+                                  symbol1.textContent =data[0].symbol;   
+                               const symbol2 = document.getElementById("symbol2"); 
+                                  symbol2.textContent =data[1].symbol;  
+                               
+                                const price1 = document.getElementById("price1"); 
+                                 price1.textContent =data[0].ltp;   
+                               const price2 = document.getElementById("price2"); 
+                                price2.textContent =data[1].ltp;  
+                              // const price3 = document.getElementById("price3"); 
+                              
+                           
+                               }
+                            function updateTickers(data) {
+                              // Remove all dynamically added tickers (keep first child)
+                                  while (container.children.length > 1) {
+                                    container.removeChild(container.lastChild);
+                                   }
+                             // Add new tickers
+                                  data.forEach((ticker, index) => {
+                                     const tickerSpan = document.createElement("span");
+                                      tickerSpan.className = "ticker-span flex items-center space-x-2 bg-gray-100 p-2 rounded shadow";
+
+                                     const inner = document.createElement("span");
+                                      inner.className = "ticker-inner flex flex-col items-start";
+
+                                      const symbol = document.createElement("span");
+                                      symbol.className = "ticker-symbol font-bold";
+                                        symbol.id = `symbol${index + 2}`;
+                                      symbol.textContent = ticker.symbol;
+                                      const ltp = document.createElement("span");
+                                      ltp.className = "ticker-ltp text-green-600";
+                                       ltp.id = `ltp${index + 2}`;
+                                       ltp.textContent = ticker.ltp;
+
+                                       inner.appendChild(symbol);
+                                       inner.appendChild(ltp);
+                                           tickerSpan.appendChild(inner);
+                                         container.appendChild(tickerSpan);
+                                    });
+                                  }
+                              
+
+
+                             document.getElementById('startSSE').addEventListener('click', function (event) {
+                                //event.preventDefault(); // stop POST
+                                 if(es) { 
+			                        console.log("SSE alredy running ");
+                                    return;
+                                  }
+                                   es = new EventSource(`http://localhost:5002/stream?accessToken=${actToken }`);
+                                   es.onmessage = function(e) {
+                                       console.log("SSE:", e.data);
+                                        
+                                         try { 
+                                            tickParse = JSON.parse(e.data);
+                                            if(tickParse.symbol !== null && tickParse.symbol !==undefined &&
+                                               tickParse.ltp !==null && tickParse.ltp !== undefined) { 
+                                                                // assign textContent
+                                            document.getElementById("oid").textContent = tickParse.id;
+                                            document.getElementById("eoid").textContent = tickParse.exchOrdId;
+                                            document.getElementById("symbol").textContent = tickParse.symbol;
+                                            document.getElementById("qtyf").textContent = tickParse.filledQty;
+                                            document.getElementById("qtyn").textContent = tickParse.qty;
+                                            document.getElementById("price").textContent = `₹${tickParse.limitPrice}`;
+                                            document.getElementById("side").textContent = sideMap[tickParse.side] || tickParse.side;
+                                            document.getElementById("status").textContent = statusMap[tickParse.status] || tickParse.status;
+                                            document.getElementById("product").textContent = tickParse.product;
+                                            document.getElementById("odate").textContent = tickParse.odate;
+                                            document.getElementById("desc").textContent = tickParse.desc;  
+
+
+                                            symbol = tickParse.symbol;
+                                            ltp = tickParse.ltp;
+                                              tickBufferQueue.push(tickParse);
+                                             // setInterval( () => {
+                                                showPositions( tickBufferQueue);
+                                           //   }, 200)
+                                                                                      
+                                             }
+                                         }
+                                         catch(er){
+                                            console.log("Ticker data not parseable ");
+                                             tickParse =  prevTickParse;
+                                             symbol = tickParse.symbol;
+                                             ltp = tickParse.ltp; 
+                                             if( Arrays.isArray(tickParse)) { 
+                                               tickParse.forEach((ticker, index) => {
+                                                 addOtherIndices(ticker, index);
+                                                }); 
+                                             }                                        
+                                          }
+
+                                        //document.getElementById('symbol1').textContent = symbol;
+                                        // document.getElementById('ltp1').textContent = ltp;
+                                    };
+                                   es.onopen = function() {
+                                       console.log("SSE: connection open " );
+                                       // document.getElementById('sse').textContent = e.data;
+                                    };
+                                   es.onerror = function(e) {
+                                       console.error("SSE:  error " );
+                                       // document.getElementById('sse').textContent = e.data;
+                                    };
+
+  
+                             });
+                             document.getElementById('stopSSE').addEventListener('click', function (event) {
+                                 if (es) {
+                                   es.close();
+                                   es = null;
+                                    console.log("SSE connection stopped");
+                                 } else {
+                                   console.log("No SSE connection to stop");
+                                 }
+
+                             });
+
+                           </script>
+
+                         
+                      </body>
+                    </html>
