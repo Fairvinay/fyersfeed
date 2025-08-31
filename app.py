@@ -1,6 +1,5 @@
 from fyers_apiv3 import fyersModel as fyersV3
 from fyers_apiv3.FyersWebsocket import data_ws
-from fyers_apiv3.FyersWebsocket import order_ws
 #from fyers_apiv3 import accessToken
 #from fyers_apiv3.fyersModel import accessToken
 #from fyers_api import accessToken as fyersV2
@@ -17,7 +16,6 @@ from threading import Thread
 import webbrowser
 import time , os , json
 import sys , queue
-import random   # <-- add this
 
 
 
@@ -30,7 +28,7 @@ redirec_base_url = os.environ.get("redirec_base_url", "https://successrate.netli
 redirect_uri = redirec_base_url.rstrip("/") +"/.netlify/functions/netlifystockfyersbridge/api/fyersauthcodeverify"
 response_type = "code"
 grant_type = "authorization_code"
-state = "python_position_state"
+state = "python_state"
 
 auth_code_received = None
 flask_process = None  # Will store reference to the running Process
@@ -64,7 +62,7 @@ CORS(app, supports_credentials=True, resources={r"/stream*": {"origins": cors_ur
 #    "https://successrate.netlify.app",
 #    "https://fyersbook.netlify.app",
 #    "https://onedinaar.com",
-#    "https://192.168.1.7:8888",
+#    "https://192.168.1.4:8888",
 #]
 
 # Read env variable and parse into list
@@ -78,7 +76,7 @@ else:
         "https://successrate.netlify.app",
         "https://fyersbook.netlify.app",
         "https://onedinaar.com",
-        "https://192.168.1.7:8888",
+        "https://192.168.1.4:8888",
     ]
     print("Allowed origins configured from hard code")
 
@@ -180,14 +178,255 @@ def redirect_handler_start():
         global_access_token = response["access_token"]
         #open_websocket(global_access_token)
         #return f"✅ Login successful! WebSocket started.<br><br>Access token:<br><code>{global_access_token}</code>"
-        order_variables = {
-         "secret_value": global_access_token
-        }
-        # Pass dictionary by unpacking
-        if received_state == "python_order":
-           return render_template("orders.html", **order_variables)
-        elif received_state == "python_position":
-           return render_template("orders-positions.html", **order_variables)
+        return render_template_string("""
+                  <!DOCTYPE html>
+                    <html>
+                     <head>
+                      <meta charset="UTF-8">
+                       <title>Stream with Fyers</title>
+                        <style>
+                          body {
+                           font-family: sans-serif;
+                           text-align: center;
+                           margin-top: 100px;
+                          }
+                          .ticker-span { 
+                             background-color:#346ccf; color:#eaf1de; border-radius: 6px;font-size: 28px;
+                             border-color: #1f8ef1;
+                             border-style:groove;
+                             margin-bottom: 43px;
+                          }
+                          .ticker-inner {
+                           display: inline-flex;
+                           align-items: center;
+                            gap: 42px
+                           /*padding: 4px 12px;*/
+                           background: rgba(255, 255, 255, 0.1); /* translucent overlay */
+                           /*border-radius: 4px;
+                           border: 1px solid rgba(234, 241, 222, 0.5);*/
+                          }
+                          .ticker-symbol {
+                            font-weight: bold;
+                            font-size: 0.8em; /* slightly smaller than outer span's 28px */
+                            letter-spacing: 0.2px;
+                          }
+
+                          .ticker-ltp {
+                            font-weight: bold;
+                            font-size: 0.8em;
+                            background-color: rgba(0, 0, 0, 0.15);
+                            padding: 2px 8px;
+                            border-radius: 4px;
+                            /*border: 1px solid rgba(234, 241, 222, 0.5);*/
+                          }
+                          .login-btn {
+                            padding: 12px 24px;
+                            font-size: 18px;
+                            background-color: #1f8ef1;
+                            color: white;
+                            border: none;
+                            border-radius: 6px;
+                            cursor: pointer;
+                            margin-top: 5px;
+                          }
+                          .login-btn:hover {
+                            background-color: #0d6efd;
+                          }
+                        </style>
+                     </head>
+                      <body>
+                       <div id="messages"></div>
+                        <script>
+                          
+                           var accessToken = "{{ secret_value }}";
+                           console.log("Server variable:", accessToken);
+                           /*  document.getElementById('startSSE').addEventListener('click', function (event) {
+                                //event.preventDefault(); // stop POST
+                                 const es = new EventSource(`https://fyersmarketfeed.onrender.com/stream?accessToken=${accessToken}`);
+                                es.onmessage = function(e) {
+                                       console.log("SSE:", e.data);
+                                    };
+                           });
+
+                           function post() { 
+		            event.preventDefault();
+                            const eventSource = new EventSource(`/stream?accessToken=${accessToken}`);
+                            eventSource.onmessage = function(event) {
+                               const msgDiv = document.getElementById("messages");
+                               msgDiv.innerHTML += "<p>" + event.data + "</p>";
+                            };
+                           }*/
+
+                        </script>
+
+                        <form  method="POST">
+                         <div id="ticker-container" class="flex space-x-4">
+                         	<span id="sse" class="ticker-span">
+                                 </span>
+                          </div>
+                        </form>
+                         <button class="login-btn"  type="button" id="startSSE" >Stream with Fyers</button>
+			  <button class="login-btn"  type="button" id="stopSSE" >STOP</button>
+                          <script>
+                             let es = null; // store reference
+                             let tickParse =null; 
+                                         let symbol = null;
+                                         let ltp = null;
+                             let tickBufferQueue  = [];
+                             let actToken =  "{{ secret_value }}";
+                             let prevTickParse = JSON.parse('{"ltp": "2288.2", "symbol": "NSE:ADANIENT-EQ", "type": "sf"}');
+                               console.log(prevTickParse);
+                              const container = document.getElementById("ticker-container");  
+                             function addTicker(symbol, ltp , symbolId, ltpId) {
+                              // Create outer span
+                              const outer = document.createElement('span');
+                              outer.className = 'ticker-span';
+
+                               // Create inner container
+                               const inner = document.createElement('span');
+                                inner.className = 'ticker-inner';
+
+                                // Symbol span
+                                 const symbolSpan = document.createElement('span');
+                                  symbolSpan.className = 'ticker-symbol';
+                                   symbolSpan.id = symbolId;  // ✅ ID for symbol
+                                 symbolSpan.textContent = symbol;
+
+                                // LTP span
+                                 const ltpSpan = document.createElement('span');
+                                 ltpSpan.className = 'ticker-ltp';
+                                   ltpSpan.id = ltpId;  // ✅ ID for LTP
+                                 ltpSpan.textContent = ltp;
+
+                                  // Append children
+                                 inner.appendChild(symbolSpan);
+                                 inner.appendChild(ltpSpan);
+                                  outer.appendChild(inner);
+
+                                 // Append to the target element
+                                document.getElementById('sse').appendChild(outer);
+                              }
+                             // addTicker('NIFTY2581424400CE', 126, 'symbol1', 'ltp1');
+                             // addTicker('BANKNIFTY2501012000PE', 352.5, 'symbol2', 'ltp2');    
+                               function   addOtherIndices(ticker , index  ) {
+                                 const tickerSpan = document.createElement("span");
+                                tickerSpan.className = "ticker-span flex items-center space-x-2 bg-gray-100 p-2 rounded shadow";
+
+                               const inner = document.createElement("span");
+                                inner.className = "ticker-inner flex flex-col items-start";
+
+                                const symbol = document.createElement("span");
+                                 symbol.className = "ticker-symbol font-bold";
+                                 symbol.id = `symbol${index + 2}`;
+                                 symbol.textContent = ticker.symbol;
+
+                                 const ltp = document.createElement("span");
+                                 ltp.className = "ticker-ltp text-green-600";
+                                 ltp.id = `ltp${index + 2}`;
+                                 ltp.textContent = ticker.ltp;
+
+                                 inner.appendChild(symbol);
+                                 inner.appendChild(ltp);
+                                 tickerSpan.appendChild(inner);
+                                 container.appendChild(tickerSpan);
+                               }
+                            function updateTickers(data) {
+                              // Remove all dynamically added tickers (keep first child)
+                                  while (container.children.length > 1) {
+                                    container.removeChild(container.lastChild);
+                                   }
+                             // Add new tickers
+                                  data.forEach((ticker, index) => {
+                                     const tickerSpan = document.createElement("span");
+                                      tickerSpan.className = "ticker-span flex items-center space-x-2 bg-gray-100 p-2 rounded shadow";
+
+                                     const inner = document.createElement("span");
+                                      inner.className = "ticker-inner flex flex-col items-start";
+
+                                      const symbol = document.createElement("span");
+                                      symbol.className = "ticker-symbol font-bold";
+                                        symbol.id = `symbol${index + 2}`;
+                                      symbol.textContent = ticker.symbol;
+                                      const ltp = document.createElement("span");
+                                      ltp.className = "ticker-ltp text-green-600";
+                                       ltp.id = `ltp${index + 2}`;
+                                       ltp.textContent = ticker.ltp;
+
+                                       inner.appendChild(symbol);
+                                       inner.appendChild(ltp);
+                                           tickerSpan.appendChild(inner);
+                                         container.appendChild(tickerSpan);
+                                    });
+                                  }
+                              
+
+
+                             document.getElementById('startSSE').addEventListener('click', function (event) {
+                                //event.preventDefault(); // stop POST
+                                 if(es) { 
+			              console.log("SSE alredy running ");
+                                    return;
+                                  }
+                                   es = new EventSource(`https://fyersmarketfeed.onrender.com/stream?accessToken=${actToken }`);
+                                   es.onmessage = function(e) {
+                                       console.log("SSE:", e.data);
+                                        
+                                         try { 
+                                            tickParse = JSON.parse(e.data);
+                                            if(tickParse.symbol !== null && tickParse.symbol !==undefined &&
+                                               tickParse.ltp !==null && tickParse.ltp !== undefined) { 
+                                            symbol = tickParse.symbol;
+                                            ltp = tickParse.ltp;
+                                              tickBufferQueue.push(tickParse);
+                                              setInterval( () => {
+                                                 updateTickers( tickBufferQueue);
+                                              }, 200)
+                                                                                      
+                                             }
+                                         }
+                                         catch(er){
+                                            console.log("Ticker data not parseable ");
+                                             tickParse =  prevTickParse;
+                                             symbol = tickParse.symbol;
+                                             ltp = tickParse.ltp; 
+                                             if( Arrays.isArray(tickParse)) { 
+                                               tickParse.forEach((ticker, index) => {
+                                                 addOtherIndices(ticker, index);
+                                                }); 
+                                             }                                        
+                                          }
+
+                                        //document.getElementById('symbol1').textContent = symbol;
+                                        // document.getElementById('ltp1').textContent = ltp;
+                                    };
+                                   es.onopen = function() {
+                                       console.log("SSE: connection open " );
+                                       // document.getElementById('sse').textContent = e.data;
+                                    };
+                                   es.onerror = function(e) {
+                                       console.error("SSE:  error " );
+                                       // document.getElementById('sse').textContent = e.data;
+                                    };
+
+  
+                             });
+                             document.getElementById('stopSSE').addEventListener('click', function (event) {
+                                 if (es) {
+                                   es.close();
+                                   es = null;
+                                    console.log("SSE connection stopped");
+                                 } else {
+                                   console.log("No SSE connection to stop");
+                                 }
+
+                             });
+
+                           </script>
+
+                         
+                      </body>
+                    </html>
+        """,secret_value=global_access_token)
     else:
         return f"❌ Failed to generate token: {response}"
 
@@ -238,9 +477,9 @@ def market_feed():
                  "Access-Control-Allow-Credentials": "true"
             }
     
-    # Start background websocket thread
-    #threading.Thread(target=start_websocket_ticker, args=(access_token,tickers)).start()
-    """ 
+     # Start background websocket thread
+    threading.Thread(target=start_websocket_ticker, args=(access_token,tickers)).start()
+
     def event_stream():
         while True:
             msg = message_queue.get()
@@ -248,53 +487,17 @@ def market_feed():
                 break
             yield msg
     """
-    tickers = ["NSE:IDEA-EQ", "NSE:RELIANCE-EQ", "NSE:TCS-EQ", "NSE:HDFCBANK-EQ"]
     def event_stream():
-      while True:
-        for ticker in tickers:
-            # pick a random symbol from the list
-            symbol = random.choice(tickers)
-            # build a unique id from symbol + product type
-            product_type = "INTRADAY"
-            id_val = f"{symbol}-{product_type}"
-
-            # randomize profit (between -10 and +10 for example)
-            realized_profit = round(random.uniform(-10, 10), 2)
-            netAvg  = round(random.uniform(-8, 8), 2)
-            data = {
-                "s": "ok",
-                "positions": {
-                    "symbol": symbol,
-                    "id": id_val,
-                    "buyAvg": 8,
-                    "buyQty": 1,
-                    "buyVal": 8,
-                    "sellAvg": 7.95,
-                    "sellQty": 1,
-                    "sellVal": 7.95,
-                    "netAvg": netAvg,
-                    "netQty": 0,
-                    "side": 0,
-                    "qty": 0,
-                    "productType": product_type,
-                    "realized_profit": realized_profit,
-                    "rbiRefRate": 1,
-                    "fyToken": "101000000014366",
-                    "exchange": 10,
-                    "segment": 10,
-                    "dayBuyQty": 1,
-                    "daySellQty": 1,
-                    "cfBuyQty": 0,
-                    "cfSellQty": 0,
-                    "qtyMulti_com": 1
+        while True:
+            # Example: send dummy data for each ticker
+            for ticker in tickers:
+                data = {
+                    "symbol": ticker,
+                    "ltp": round(1000 + time.time() % 100, 2)
                 }
-            }
-
-            # yield SSE response
-            yield f"data: {json.dumps(data)}\n\n"
-
-        # wait 2 seconds before next batch
-        time.sleep(2)
+                yield f"data: {json.dumps(data)}\n\n"
+            time.sleep(2)
+    """
     return Response(event_stream(), mimetype="text/event-stream", headers=headers)
 
 
@@ -466,104 +669,74 @@ def start_websocket(access_token):
     fyers.connect()
  
 # 5. WebSocket Connection Function
-def start_websocket_ticker(user_access_token,tickers):
-   
-    def onTrade(message):
-        """
-        Callback function to handle incoming messages from the FyersDataSocket WebSocket.
+def start_websocket_ticker(access_token,tickers):
+    def onmessage(message):
+         """
+         Callback function to handle incoming messages from the FyersDataSocket WebSocket.
 
-        Parameters:
-            message (dict): The received message from the WebSocket.
+          Parameters:
+                message (dict): The received message from the WebSocket.
 
-        """
-        print("Trade Response:", message)
+         """
+         message_queue.put(f"data: {json.dumps(message)}\n\n")
+         print("Response:", message)
 
-    def onOrder(message):
-        """
-        Callback function to handle incoming messages from the FyersDataSocket WebSocket.
-
-        Parameters:
-            message (dict): The received message from the WebSocket.
-
-        """
-        
-        print("Order Response:", message)
-
-    def onPosition(message):
-        """
-        Callback function to handle incoming messages from the FyersDataSocket WebSocket.
-
-        Parameters:
-            message (dict): The received message from the WebSocket.
-
-        """
-        message_queue.put(f"data: {json.dumps(message)}\n\n")
-        #message_queue.put(f"data: {json.dumps(message)}\n\n")
-        print("Position Response:", message)
-
-    def onGeneral(message):
-        """
-        Callback function to handle incoming messages from the FyersDataSocket WebSocket.
-
-        Parameters:
-            message (dict): The received message from the WebSocket.
-
-        """
-        print("General Response:", message)
     def onerror(message):
-        """
-        Callback function to handle WebSocket errors.
+         """
+          Callback function to handle WebSocket errors.
 
-        Parameters:
-            message (dict): The error message received from the WebSocket.
-
-
-        """
-        print("Error:", message)
+          Parameters:
+                message (dict): The error message received from the WebSocket.
+         """
+         print("Error:", message)
 
 
     def onclose(message):
-        """
-        Callback function to handle WebSocket connection close events.
-        """
-        print("Connection closed:", message)
+         """
+           Callback function to handle WebSocket connection close events.
+         """
+         print("Connection closed:", message)
 
 
     def onopen():
-        """
-        Callback function to subscribe to data type and symbols upon WebSocket connection.
+         """
+          C allback function to subscribe to data type and symbols upon WebSocket connection.
 
-        """
-        # Specify the data type and symbols you want to subscribe to ,OnTrades,OnPositions,OnGeneral
-        # data_type = "OnOrders"
-        # data_type = "OnTrades"
-        # data_type = "OnPositions"
-        # data_type = "OnGeneral"
-        data_type = "OnPositions"
+         """
+         # Specify the data type and symbols you want to subscribe to
+         data_type = "SymbolUpdate"
 
-        fyers.subscribe(data_type=data_type)
+         # Subscribe to the specified symbols and data type
+         #symbols = ['NSE:SBIN-EQ', 'NSE:ADANIENT-EQ']
+         # Validate: must be a list, non-empty, and all elements non-empty strings
+         if isinstance(tickers, list) and len(tickers) > 0 and all(t.strip() for t in tickers):
+            symbols = tickers
+         else:
+         # Default fallback
+            symbols = [
+              "BSE:SENSEX-INDEX",
+              "NSE:NIFTY50-INDEX",
+              "NSE:NIFTYBANK-INDEX"
+            ]
+         # symbols = tickers
+         fyers.subscribe(symbols=symbols, data_type=data_type)
 
-        # Keep the socket running to receive real-time data
-        fyers.keep_running()
-
-
-    # Replace the sample access token with your actual access token obtained from Fyers
+         # Keep the socket running to receive real-time data
+         fyers.keep_running()
     print("📡 Starting WebSocket with access_token...")
     # Replace the sample access token with your actual access token obtained from Fyers 
-    access_token = user_access_token
+    access_token = access_token
     # Create a FyersDataSocket instance with the provided parameters
-    fyers = order_ws.FyersOrderSocket(
-     access_token=f"{client_id}:{access_token}",       # Access token in the format "appid:accesstoken"
+    fyers = data_ws.FyersDataSocket(
+     access_token=access_token,       # Access token in the format "appid:accesstoken"
      log_path="",                     # Path to save logs. Leave empty to auto-create logs in the current directory.
+     litemode=True,                  # Lite mode disabled. Set to True if you want a lite response.
      write_to_file=False,              # Save response in a log file instead of printing it.
-     #reconnect=True,                  # Enable auto-reconnection to WebSocket on disconnection.
-     on_connect=onopen,          # Callback function to be executed upon successful WebSocket connection.
-     on_close=onclose,           # Callback function to be executed when the WebSocket connection is closed.
-     on_error=onerror,           # Callback function to handle any WebSocket errors that may occur.
-     on_general=onGeneral,       # Callback function to handle general events from the WebSocket.
-     on_orders=onOrder,          # Callback function to handle order-related events from the WebSocket.
-     on_positions=onPosition,    # Callback function to handle position-related events from the WebSocket.
-     on_trades=onTrade           # Callback function to handle trade-related events from the WebSocket.
+     reconnect=True,                  # Enable auto-reconnection to WebSocket on disconnection.
+     on_connect=onopen,               # Callback function to subscribe to data upon connection.
+     on_close=onclose,                # Callback function to handle WebSocket connection close events.
+     on_error=onerror,                # Callback function to handle WebSocket errors.
+     on_message=onmessage             # Callback function to handle incoming messages from the WebSocket.
     )
 
     # Establish a connection to the Fyers WebSocket
@@ -592,7 +765,7 @@ def run_process_background_order_update(access_token_ws):
 """
 
 def run_flask():
-    port = int(os.environ.get("PORT", 5003))  # Render sets PORT env variable
+    port = int(os.environ.get("PORT", 5000))  # Render sets PORT env variable
     app.run(host="0.0.0.0", port=port,debug=False, use_reloader=False)
 
 
@@ -615,7 +788,7 @@ def main():
     #flask_thread.start()
 
     #time.sleep(1)
-    #webbrowser.open("https://fyerspositions.onrender.com/")
+    #webbrowser.open("https://fyersmarketfeed.onrender.com/")
 
     # Trigger login and capture auth code
     #auth_code = generate_auth_code()
