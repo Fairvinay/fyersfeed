@@ -54,7 +54,7 @@ message_queue = queue.Queue()
 # Allow only your Next.js origin
 #CORS(app, supports_credentials=True, resources={r"/stream*": {"origins": "https://fyersbook.netlify.app"}})
 cors_url = redirec_base_url.rstrip("/")
-CORS(app, supports_credentials=True, resources={r"/stream*": {"origins": cors_url}})
+
 
 
 # Allowed origins
@@ -68,6 +68,8 @@ CORS(app, supports_credentials=True, resources={r"/stream*": {"origins": cors_ur
 # Read env variable and parse into list
 allowed_origins = os.environ.get("ALLOWED_ORIGINS", "")
 ALLOWED_ORIGINS = [origin.strip() for origin in allowed_origins.split(",") if origin.strip()]
+CORS(app, supports_credentials=True,origins=ALLOWED_ORIGINS, allow_headers=["Content-Type", "Authorization"] ,methods=["GET", "POST", "OPTIONS"])
+#CORS(app, supports_credentials=True, resources={r"/stream*": {"origins": cors_url}})
 
 if ALLOWED_ORIGINS:  # checks list is not empty
     print("Allowed origins found:", ALLOWED_ORIGINS)
@@ -468,15 +470,27 @@ def market_feed():
     
     if request.method == "OPTIONS":
         origin = request.headers.get("Origin")
+        headers = {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        "Connection": "keep-alive"
+        }
         if origin in ALLOWED_ORIGINS:
-            headers = {
-                 "Content-Type": "text/event-stream",
-                 "Cache-Control": "no-cache",
-                 "Connection": "keep-alive",
-                 "Access-Control-Allow-Origin": origin,
-                 "Access-Control-Allow-Credentials": "true"
-            }
-    
+            headers["Access-Control-Allow-Origin"] = origin
+            headers["Access-Control-Allow-Credentials"] = "true"
+#            headers = {
+#                 "Content-Type": "text/event-stream",
+#                 "Cache-Control": "no-cache",
+#                 "Connection": "keep-alive",
+#                 "Access-Control-Allow-Origin": origin,
+#                 "Access-Control-Allow-Headers": "Content-Type",
+#                 "Access-Control-Allow-Credentials": "true"
+#            }
+#        if origin in ALLOWED_ORIGINS:
+#            response.headers["Access-Control-Allow-Origin"] = origin
+#            response.headers["Access-Control-Allow-Methods"] = "GET"
+#            response.headers["Access-Control-Allow-Headers"] = "Content-Type"
+#            response.headers["Access-Control-Allow-Credentials"] = "true"
      # Start background websocket thread
     threading.Thread(target=start_websocket_ticker, args=(access_token,tickers)).start()
 
