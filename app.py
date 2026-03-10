@@ -23,7 +23,10 @@ message_queue = queue.Queue()
 # Prevent multiple websocket launches
 ws_running = False
 
-
+@app.route("/")
+def home():
+    return {"status": "running", "service": "fyers-stream"}, 200
+    
 @app.route("/healthz")
 def health():
     return {"status": "ok"}, 200
@@ -59,17 +62,29 @@ def stream():
         ).start()
 
     def event_stream():
+        import time
         while True:
-            msg = message_queue.get()
-            yield f"data: {json.dumps(msg)}\n\n"
+           try:
+               msg = message_queue.get(timeout=15)
+               yield f"data: {json.dumps(msg)}\n\n"
+           except queue.Empty:
+               yield ":\n\n"
 
-    headers = {
-        "Cache-Control": "no-cache",
-        "Connection": "keep-alive",
-        "Access-Control-Allow-Origin": request.headers.get("Origin", "*"),
-    }
+        origin = request.headers.get("Origin")
 
-    return Response(event_stream(), mimetype="text/event-stream", headers=headers)
+        if origin not in ALLOWED_ORIGINS:
+               origin = ALLOWED_ORIGINS[0]
+
+        headers = {
+               "Content-Type": "text/event-stream",
+               "Cache-Control": "no-cache",
+               "Connection": "keep-alive",
+               "Access-Control-Allow-Origin": origin,
+               "Access-Control-Allow-Headers": "Content-Type, Authorization",
+               "Access-Control-Allow-Methods": "GET, OPTIONS",
+        }
+
+        return Response(event_stream(), headers=headers)
 
 
 def start_fyers_ws(access_token, tickers):
@@ -106,6 +121,8 @@ def start_fyers_ws(access_token, tickers):
 
 @app.errorhandler(Exception)
 def handle_error(e):
+    if isinstance(e, HTTPException):
+        return e
     print("🔥 SERVER ERROR:", str(e))
     return {"error": str(e)}, 500
 
