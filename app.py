@@ -67,8 +67,10 @@ cors_url = redirec_base_url.rstrip("/")
 
 # Read env variable and parse into list
 allowed_origins = os.environ.get("ALLOWED_ORIGINS", "")
+
 ALLOWED_ORIGINS = [origin.strip() for origin in allowed_origins.split(",") if origin.strip()]
-CORS(app, supports_credentials=True,origins=ALLOWED_ORIGINS, allow_headers=["Content-Type", "Authorization"] ,methods=["GET", "POST", "OPTIONS"])
+CORS(app, supports_credentials=True, resources={r"/stream*": {"origins": ALLOWED_ORIGINS}})
+#CORS(app, supports_credentials=True,origins=ALLOWED_ORIGINS, allow_headers=["Content-Type", "Authorization"] ,methods=["GET", "POST", "OPTIONS"])
 #CORS(app, supports_credentials=True, resources={r"/stream*": {"origins": cors_url}})
 
 if ALLOWED_ORIGINS:  # checks list is not empty
@@ -453,46 +455,28 @@ def stream():
         
     return Response(event_stream(), mimetype="text/event-stream")
 
-@app.route("/stream")
+@app.route("/stream", methods=["GET", "OPTIONS"])
 def market_feed():
-	
-    global headers
 
-    # Option 1: If repeated params
-    tickers = request.args.getlist("ticker")
-
-    # Option 2: If JSON encoded
-    # tickers = json.loads(request.args.get("tickers", "[]"))
+    if request.method == "OPTIONS":
+        response = Response()
+        response.headers["Access-Control-Allow-Origin"] = request.headers.get("Origin", "*")
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+        response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
+        response.headers["Access-Control-Allow-Methods"] = "GET, OPTIONS"
+        return response
 
     access_token = request.args.get("accessToken")
+    tickers = request.args.getlist("ticker")
+
     print("Tickers:", tickers)
     print("Access Token:", access_token)
-    
-    if request.method == "OPTIONS":
-        origin = request.headers.get("Origin")
-        headers = {
-        "Content-Type": "text/event-stream",
-        "Cache-Control": "no-cache",
-        "Connection": "keep-alive"
-        }
-        if origin in ALLOWED_ORIGINS:
-            headers["Access-Control-Allow-Origin"] = origin
-            headers["Access-Control-Allow-Credentials"] = "true"
-#            headers = {
-#                 "Content-Type": "text/event-stream",
-#                 "Cache-Control": "no-cache",
-#                 "Connection": "keep-alive",
-#                 "Access-Control-Allow-Origin": origin,
-#                 "Access-Control-Allow-Headers": "Content-Type",
-#                 "Access-Control-Allow-Credentials": "true"
-#            }
-#        if origin in ALLOWED_ORIGINS:
-#            response.headers["Access-Control-Allow-Origin"] = origin
-#            response.headers["Access-Control-Allow-Methods"] = "GET"
-#            response.headers["Access-Control-Allow-Headers"] = "Content-Type"
-#            response.headers["Access-Control-Allow-Credentials"] = "true"
-     # Start background websocket thread
-    threading.Thread(target=start_websocket_ticker, args=(access_token,tickers)).start()
+
+    threading.Thread(
+        target=start_websocket_ticker,
+        args=(access_token, tickers),
+        daemon=True
+    ).start()
 
     def event_stream():
         while True:
@@ -500,20 +484,19 @@ def market_feed():
             if msg is None:
                 break
             yield msg
-    """
-    def event_stream():
-        while True:
-            # Example: send dummy data for each ticker
-            for ticker in tickers:
-                data = {
-                    "symbol": ticker,
-                    "ltp": round(1000 + time.time() % 100, 2)
-                }
-                yield f"data: {json.dumps(data)}\n\n"
-            time.sleep(2)
-    """
-    return Response(event_stream(), mimetype="text/event-stream", headers=headers)
 
+    response = Response(event_stream(), mimetype="text/event-stream")
+
+    origin = request.headers.get("Origin")
+
+    if origin in ALLOWED_ORIGINS:
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+
+    response.headers["Cache-Control"] = "no-cache"
+    response.headers["Connection"] = "keep-alive"
+
+    return response
 
 def open_websocket(token):
     def run_ws():
