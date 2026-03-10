@@ -1,12 +1,14 @@
 import os
 import json
-import queue
+import sys , queue
 import threading
 from flask import Flask, Response, request
 from flask_cors import CORS
 from fyers_apiv3.FyersWebsocket import data_ws
 from flask_cors import cross_origin
 from werkzeug.exceptions import HTTPException
+from multiprocessing import Process
+
 
 app = Flask(__name__)
 
@@ -89,8 +91,9 @@ def stream():
                "Access-Control-Allow-Headers": "Content-Type, Authorization",
                "Access-Control-Allow-Methods": "GET, OPTIONS",
         }
-
-        return Response(event_stream(),mimetype="text/event-stream", headers={"Cache-Control": "no-cache", "Connection": "keep-alive" })
+        print("event stream existed")
+        
+    return Response(event_stream(),mimetype="text/event-stream", headers={"Cache-Control": "no-cache", "Connection": "keep-alive" })
   except Exception as e:
         print("STREAM ERROR:", e)
         return {"error": str(e)}, 500
@@ -101,11 +104,17 @@ def start_fyers_ws(access_token, tickers):
 
     def on_open():
         print("WS Connected")
-        fyers.subscribe(symbols=tickers, data_type="SymbolUpdate")
+        # Subscribe to the specified symbols and data type
+        # Validate: must be a list, non-empty, and all elements non-empty strings
+        if isinstance(tickers, list) and len(tickers) > 0 and all(t.strip() for t in tickers):
+           symbols = tickers
+        else:
+           symbols = ["BSE:SENSEX-INDEX","NSE:NIFTY50-INDEX","NSE:NIFTYBANK-INDEX" ] 
+        fyers.subscribe(symbols=symbols, data_type="SymbolUpdate")
         fyers.keep_running()
 
     def on_message(msg):
-        message_queue.put(msg)
+        message_queue.put(f"data: {json.dumps(msg)}\n\n")
 
     def on_error(err):
         print("WS Error:", err)
@@ -123,7 +132,7 @@ def start_fyers_ws(access_token, tickers):
         on_error=on_error,
         on_close=on_close
     )
-
+    print("📡 connecting to fyers websocket")
     fyers.connect()
 
 
@@ -134,7 +143,23 @@ def handle_error(e):
     print("🔥 SERVER ERROR:", str(e))
     return {"error": str(e)}, 500
 
+def run_flask():
+    port = int(os.environ.get("PORT", 5000))  # Render sets PORT env variable
+    app.run(host="0.0.0.0", port=port,debug=False, use_reloader=False)
+
+
+#new running main 
+def main():
+    #flask_thread = Thread(target=run_flask)
+    #flask_thread.start()
+    flask_process = Process(target=run_flask)
+    flask_process.start()
+
+    print("✅ Flask server started.")
+
+
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+	main()
+    #port = int(os.environ.get("PORT", 5000))
+    #app.run(host="0.0.0.0", port=port)
