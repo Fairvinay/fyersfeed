@@ -38,8 +38,10 @@ def health():
 def stream():
 
     if request.method == "OPTIONS":
+        
         response = app.make_default_options_response()
-    	return response
+        
+        return response
 
     access_token = request.args.get("accessToken")
     if not access_token:
