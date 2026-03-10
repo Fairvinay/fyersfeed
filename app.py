@@ -37,7 +37,7 @@ def health():
 
 
 @app.route("/stream", methods=["GET", "OPTIONS"])
-@cross_origin(origins=ALLOWED_ORIGINS)
+@cross_origin(origins=ALLOWED_ORIGINS, supports_credentials=True)
 def stream():
   try:
     if request.method == "OPTIONS":
@@ -93,7 +93,7 @@ def stream():
         }
         print("event stream existed")
         
-    return Response(event_stream(),mimetype="text/event-stream", headers={"Cache-Control": "no-cache", "Connection": "keep-alive" })
+    return Response(event_stream(),mimetype="text/event-stream", headers={"Cache-Control": "no-cache", "Connection": "keep-alive", "Access-Control-Allow-Credentials": "true" })
   except Exception as e:
         print("STREAM ERROR:", e)
         return {"error": str(e)}, 500
