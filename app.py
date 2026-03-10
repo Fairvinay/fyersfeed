@@ -37,7 +37,7 @@ def health():
 @app.route("/stream", methods=["GET", "OPTIONS"])
 @cross_origin(origins=ALLOWED_ORIGINS)
 def stream():
-
+  try:
     if request.method == "OPTIONS":
         
         response = app.make_default_options_response()
@@ -91,7 +91,9 @@ def stream():
         }
 
         return Response(event_stream(),mimetype="text/event-stream", headers={"Cache-Control": "no-cache", "Connection": "keep-alive" })
-
+  except Exception as e:
+        print("STREAM ERROR:", e)
+        return {"error": str(e)}, 500
 
 def start_fyers_ws(access_token, tickers):
 
