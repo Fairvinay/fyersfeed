@@ -5,6 +5,7 @@ import threading
 from flask import Flask, Response, request
 from flask_cors import CORS
 from fyers_apiv3.FyersWebsocket import data_ws
+from flask_cors import cross_origin
 
 app = Flask(__name__)
 
@@ -33,10 +34,12 @@ def health():
 
 
 @app.route("/stream", methods=["GET", "OPTIONS"])
+@cross_origin(origins=ALLOWED_ORIGINS)
 def stream():
 
     if request.method == "OPTIONS":
-        return "", 200
+    	response = app.make_default_options_response()
+        return response
 
     access_token = request.args.get("accessToken")
     if not access_token:
