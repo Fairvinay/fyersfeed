@@ -6,6 +6,7 @@ from flask import Flask, Response, request
 from flask_cors import CORS
 from fyers_apiv3.FyersWebsocket import data_ws
 from flask_cors import cross_origin
+from werkzeug.exceptions import HTTPException
 
 app = Flask(__name__)
 
@@ -89,7 +90,7 @@ def stream():
                "Access-Control-Allow-Methods": "GET, OPTIONS",
         }
 
-        return Response(event_stream(), headers=headers)
+        return Response(event_stream(),mimetype="text/event-stream", headers={"Cache-Control": "no-cache", "Connection": "keep-alive" })
 
 
 def start_fyers_ws(access_token, tickers):
