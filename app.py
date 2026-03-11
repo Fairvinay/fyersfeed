@@ -71,12 +71,61 @@ def stream():
 
     def event_stream():
         import time
+        import random
+        import json
+
+        # Initial values
+        prices = {
+        "BSE:SENSEX-INDEX": 76995,
+        "NSE:NIFTY50-INDEX": 23950,
+        "NSE:NIFTYBANK-INDEX": 55860
+        }
+
+        # Allowed ranges
+        ranges = {
+        "BSE:SENSEX-INDEX": (76990, 77000),
+        "NSE:NIFTY50-INDEX": (23900, 24650),
+        "NSE:NIFTYBANK-INDEX": (55800, 55920)
+        }
+
+        # Movement per tick
+        movement = {
+        "BSE:SENSEX-INDEX": (3.5, 8.5),
+        "NSE:NIFTY50-INDEX": (1.5, 2.9),
+        "NSE:NIFTYBANK-INDEX": (2.0, 3.9)
+        }
+
+        symbols = list(prices.keys())
+
         while True:
-           try:
-               msg = message_queue.get(timeout=15)
-               yield f"data: {json.dumps(msg)}\n\n"
-           except queue.Empty:
-               yield ":\n\n"
+          try:
+            msg = message_queue.get(timeout=15)
+
+            yield f"data: {json.dumps(msg)}\n\n"
+
+          except queue.Empty:
+            symbol = random.choice(symbols)
+
+            min_range, max_range = ranges[symbol]
+            min_move, max_move = movement[symbol]
+
+            # Random direction
+            direction = random.choice([-1, 1])
+
+            step = random.uniform(min_move, max_move)
+
+            prices[symbol] += direction * step
+
+            # Clamp inside range
+            prices[symbol] = max(min_range, min(max_range, prices[symbol]))
+
+            simulated_msg = {
+                "ltp": round(prices[symbol], 2),
+                "symbol": symbol,
+                "type": "if"
+            }
+
+            yield f"data: {json.dumps(simulated_msg)}\n\n"
 
         origin = request.headers.get("Origin")
 
